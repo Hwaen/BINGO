@@ -1,3 +1,5 @@
+//recipe_search 상세 레시피
+
 import 'package:flutter/material.dart';
 import 'recipe_provider.dart'; // Recipe 클래스의 위치에 맞게 경로를 수정
 

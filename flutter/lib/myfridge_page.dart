@@ -1,40 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:intl/intl.dart';
 import 'package:translator/translator.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 import 'package:provider/provider.dart';
 import 'recipe_provider.dart'; // RecipeProvider 임포트
-
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-
-
-class Ingredient {
-  String ingredient;
-  //String imageUrl;
-  String expiryDate;
-  int storageType;
-
-  Ingredient({
-    required this.ingredient,
-    //required this.imageUrl,
-    required this.expiryDate,
-    required this.storageType
-  });
-
-  Map<String, dynamic> toMap(){
-    return <String, dynamic>{
-      'ingredient': ingredient,
-      //'image': imageUrl.isNotEmpty ? imageUrl : '',
-      'expiryDate': expiryDate,
-      'storage': storageType
-    };
-  }
-}
 
 class MyFridgePage extends StatefulWidget {
   const MyFridgePage({super.key});
@@ -50,23 +24,14 @@ class _MyFridgePageState extends State<MyFridgePage> {
   final DateFormat _inputDateFormat = DateFormat('yyyy.MM.dd');
   bool _isRoomTemperature = false; // 실온 재료 여부
 
-  // 갤러리에서 이미지 선택
-  Future<void> _pickFromGallery() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-
-    if (image != null) {
-      // 여기서 이미지 처리 로직 추가
-    }
-  }
-
-  // 카메라에서 이미지 선택
+// 카메라에서 이미지 선택 후 처리
   Future<void> _pickFromCamera() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.camera);
 
     if (image != null) {
-      // 여기서 이미지 처리 로직 추가
+      // 카메라로 촬영한 이미지 처리 메서드 호출
+      await _processReceipt(File(image.path));
     }
   }
 
@@ -127,6 +92,12 @@ class _MyFridgePageState extends State<MyFridgePage> {
         final result = jsonDecode(responseData);
 
         String ingredientsText = result['ingredients'];
+        if (ingredientsText.isEmpty) {
+          // 텍스트 인식 실패 시
+          showErrorMessage('텍스트를 인식하지 못했습니다. 다시 시도해 주세요.');
+          return;
+        }
+
         List<String> ingredients = ingredientsText.split('\n');
 
         List<String> cookingIngredients = [];
@@ -191,13 +162,23 @@ class _MyFridgePageState extends State<MyFridgePage> {
 
         setState(() {});
 
-        print('Extracted cooking ingredients: $cookingIngredients');
-        print('Extracted non-cooking ingredients: $nonCookingIngredients');
+        if (kDebugMode) {
+          print('Extracted cooking ingredients: $cookingIngredients');
+        }
+        if (kDebugMode) {
+          print('Extracted non-cooking ingredients: $nonCookingIngredients');
+        }
       } else {
-        print('Error: ${response.statusCode}');
+        if (kDebugMode) {
+          print('Error: ${response.statusCode}');
+          showErrorMessage('이미지를 처리하는 중 오류가 발생했습니다.');
+        }
       }
     } catch (e) {
-      print('Error processing receipt: $e');
+      if (kDebugMode) {
+        print('Error processing receipt: $e');
+        showErrorMessage('오류가 발생했습니다. 다시 시도해 주세요.');
+      }
     }
   }
 
@@ -210,7 +191,9 @@ class _MyFridgePageState extends State<MyFridgePage> {
     try {
       expiry = _inputDateFormat.parse(expiryDate);
     } catch (e) {
-      print('Error parsing date: $e');
+      if (kDebugMode) {
+        print('Error parsing date: $e');
+      }
       return Colors.grey;
     }
 
@@ -308,8 +291,6 @@ class _MyFridgePageState extends State<MyFridgePage> {
                     'storage': updatedStorageType,
                   };
 
-                 
-
                   // 기존 재료 수정
                   Provider.of<RecipeProvider>(context, listen: false)
                       .updateIngredient(index, updated, isCooking);
@@ -359,7 +340,10 @@ class _MyFridgePageState extends State<MyFridgePage> {
           SpeedDialChild(
             child: const Icon(Icons.camera_alt),
             label: '카메라',
-            onTap: () {},
+            onTap: () async {
+              // 카메라에서 이미지 선택
+              await _pickFromCamera();
+            },
           ),
           SpeedDialChild(
             child: const Icon(Icons.image),
@@ -377,6 +361,15 @@ class _MyFridgePageState extends State<MyFridgePage> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  void showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red, // 오류 메시지이므로 빨간색으로 표시
       ),
     );
   }
@@ -532,7 +525,7 @@ class _MyFridgePageState extends State<MyFridgePage> {
 
 class PexelsService {
   final String _accessKey =
-      dotenv.get("IMG_apikey");
+      'eF9GnybSb69VqyqMWelHNylGYV8njeRJeBTJzCSIhCPhn9LYfuStiQNq';
 
   Future<String> searchImage(String query) async {
     // 여러 키워드를 공백으로 분리하여 검색

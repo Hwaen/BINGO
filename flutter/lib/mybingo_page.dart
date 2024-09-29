@@ -1,30 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // SharedPreferences 추가
 import 'dart:io';
-
-class User{
-  String gender;
-  String acticvitiyLevel;
-  String profileImageUrl = 'https://via.placeholder.com/150';
-  double recommendedCalories;
-
-  User({
-    required this.gender,
-    required this.acticvitiyLevel,
-    required this.profileImageUrl,
-    required this.recommendedCalories,
-  });
-
-  Map<String, dynamic> toMap(){
-    return <String, dynamic>{
-      'gender': gender,
-      'acticvitiyLevel': acticvitiyLevel,
-      'profileImageUrl': profileImageUrl,
-      'recommendedCalories': recommendedCalories,
-    };
-  }
-
-}
 
 class MybingoPage extends StatefulWidget {
   const MybingoPage({super.key});
@@ -38,12 +15,52 @@ class _MybingoPageState extends State<MybingoPage> {
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
-  String _gender = '';
+  String _gender = '남성';
   String _activityLevel = '앉아서 일하기';
   final _formKey = GlobalKey<FormState>();
 
   String _profileImageUrl = 'https://via.placeholder.com/150'; // 기본 프로필 사진 URL
   double? _recommendedCalories;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedData(); // 저장된 데이터를 불러옴
+  }
+
+  Future<void> _loadSavedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      // 저장된 프로필 정보 불러오기
+      _nicknameController.text = prefs.getString('nickname') ?? '';
+      _heightController.text = prefs.getDouble('height')?.toString() ?? '';
+      _weightController.text = prefs.getDouble('weight')?.toString() ?? '';
+      _ageController.text = prefs.getInt('age')?.toString() ?? '';
+      _gender = prefs.getString('gender') ?? '남성';
+      _activityLevel = prefs.getString('activityLevel') ?? '앉아서 일하기';
+      _profileImageUrl = prefs.getString('profileImageUrl') ??
+          'https://via.placeholder.com/150';
+      _recommendedCalories = prefs.getDouble('recommendedCalories') ?? null;
+    });
+  }
+
+  Future<void> _saveProfileData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('nickname', _nicknameController.text);
+    await prefs.setDouble(
+        'height', double.tryParse(_heightController.text) ?? 0);
+    await prefs.setDouble(
+        'weight', double.tryParse(_weightController.text) ?? 0);
+    await prefs.setInt('age', int.tryParse(_ageController.text) ?? 0);
+    await prefs.setString('gender', _gender);
+    await prefs.setString('activityLevel', _activityLevel);
+    await prefs.setString('profileImageUrl', _profileImageUrl);
+  }
+
+  Future<void> _saveRecommendedCalories(double calories) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('recommendedCalories', calories); // 권장 칼로리 저장
+  }
 
   void _calculateRecommendedCalories() {
     if (_formKey.currentState?.validate() ?? false) {
@@ -80,6 +97,11 @@ class _MybingoPageState extends State<MybingoPage> {
         setState(() {
           _recommendedCalories = bmr * activityFactor;
         });
+
+        // 권장 칼로리 저장
+        _saveRecommendedCalories(_recommendedCalories!);
+        // 프로필 데이터 저장
+        _saveProfileData();
       }
     }
   }
@@ -92,6 +114,8 @@ class _MybingoPageState extends State<MybingoPage> {
       setState(() {
         _profileImageUrl = pickedFile.path;
       });
+      // 프로필 이미지 저장
+      _saveProfileData();
     }
   }
 
