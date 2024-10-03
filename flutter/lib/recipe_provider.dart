@@ -2,10 +2,12 @@
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
+
 import 'recipe_service.dart';
 
 class Recipe {
@@ -13,22 +15,29 @@ class Recipe {
   final String title;
   final String imageUrl;
   final String imageUrl2;
-  final String description;
-  final List<Map<String, dynamic>> manualSteps;
   final String ingredients;
+  final String description;
+  final String type;
+  final List<Map<String, dynamic>> manualSteps;  
   final String tip;
   final String category;
+  final double energy;
+  final bool heart;
 
   Recipe({
     required this.id,
     required this.title,
     required this.imageUrl,
     required this.imageUrl2,
-    required this.description,
-    required this.manualSteps,
     required this.ingredients,
+    required this.description,
+    required this.type,
+    required this.manualSteps,
     required this.tip,
     required this.category,
+    required this.energy,
+    required this.heart
+
   });
 
   get expiryDate => null;
@@ -39,11 +48,14 @@ class Recipe {
         'title': title,
         'imageUrl': imageUrl,
         'imageUrl2': imageUrl2,
-        'description': description,
-        'manualSteps': manualSteps.map((step) => step).toList(),
         'ingredients': ingredients,
+        'description': description,
+        'type': type,
+        'manualSteps': manualSteps.map((step) => step).toList(),
         'tip': tip,
         'category': category,
+        'eng' : energy,
+        'heart' : false,
       };
 
   static Recipe fromJson(Map<String, dynamic> json) => Recipe(
@@ -51,26 +63,29 @@ class Recipe {
         title: json['title'] ?? '',
         imageUrl: json['imageUrl'] ?? '',
         imageUrl2: json['imageUrl2'] ?? '',
+        ingredients: json['ingredients'] ?? '',
         description: json['description'] ?? '',
+        type: json['type'] ?? '',
         manualSteps: (json['manualSteps'] as List<dynamic>? ?? [])
             .map((e) => e as Map<String, dynamic>)
-            .toList(),
-        ingredients: json['ingredients'] ?? '',
+            .toList(),        
         tip: json['tip'] ?? '',
         category: json['category'] ?? '',
+        energy: json['eng'] ?? '',
+        heart: json['heart'] ?? ''
       );
 }
 
 class RecipeProvider with ChangeNotifier {
   Timer? _midnightTimer;
-  final List<Map<String, String>> _ingredients = [];
+  final List<Map<String, dynamic>> _ingredients = [];
 
-  final List<Map<String, String>> _cookingIngredients = []; // 요리 가능한 재료
-  final List<Map<String, String>> _nonCookingIngredients = []; // 보관 가능한 재료
+  final List<Map<String, dynamic>> _cookingIngredients = []; // 요리 가능한 재료
+  final List<Map<String, dynamic>> _nonCookingIngredients = []; // 보관 가능한 재료
   final RecipeService recipeService = RecipeService(); // RecipeService 인스턴스
 
-  List<Map<String, String>> get cookingIngredients => _cookingIngredients;
-  List<Map<String, String>> get nonCookingIngredients => _nonCookingIngredients;
+  List<Map<String, dynamic>> get cookingIngredients => _cookingIngredients;
+  List<Map<String, dynamic>> get nonCookingIngredients => _nonCookingIngredients;
 
   RecipeProvider() {
     loadSavedIngredients(); // 앱 시작 시 저장된 재료 목록 불러오기
@@ -106,7 +121,7 @@ class RecipeProvider with ChangeNotifier {
         .map((ingredient) => ingredient.trim().toLowerCase()) // 소문자로 변환 및 공백 제거
         .toList();
 
-    List<String> fridgeIngredientNames = _cookingIngredients
+    List<dynamic> fridgeIngredientNames = _cookingIngredients
         .map((ingredient) =>
             ingredient['name']!.toLowerCase().trim()) // 냉장고 재료 이름 변환
         .toList();
@@ -120,7 +135,7 @@ class RecipeProvider with ChangeNotifier {
   }
 
   // 재료 추가 메서드
-  void addIngredient(Map<String, String> ingredient, bool isCooking) async {
+  void addIngredient(Map<String, dynamic> ingredient, bool isCooking) async {
     ingredient['isCooking'] = isCooking ? 'true' : 'false'; // isCooking 값 추가
 
     _ingredients.add(ingredient);
@@ -158,12 +173,12 @@ class RecipeProvider with ChangeNotifier {
   }
 
   // 재료 목록 반환
-  List<Map<String, String>> getIngredients() {
+  List<Map<String, dynamic>> getIngredients() {
     return _ingredients;
   }
 
   // 유통기한이 임박하거나 지난 재료 반환
-  List<Map<String, String>> getExpiringOrExpiredIngredients() {
+  List<Map<String, dynamic>> getExpiringOrExpiredIngredients() {
     final DateFormat inputDateFormat = DateFormat('yyyy.MM.dd');
     DateTime now = DateTime.now();
     return _ingredients.where((ingredient) {
@@ -299,7 +314,7 @@ class RecipeProvider with ChangeNotifier {
     DateTime now = DateTime.now();
 
     // 유통기한이 오늘 이전인 재료를 제외한 요리 가능한 재료 목록을 가져오기
-    List<Map<String, String>> availableIngredients =
+    List<Map<String, dynamic>> availableIngredients =
         _cookingIngredients.where((ingredient) {
       final expiryDate = ingredient['expiryDate'];
       if (expiryDate != null && expiryDate.isNotEmpty) {
@@ -351,7 +366,7 @@ class RecipeProvider with ChangeNotifier {
 
     // 2. 유통기한 기준으로 재료를 하나씩 제거하며 레시피 추출
     for (int i = availableIngredients.length - 1; i >= 0; i--) {
-      List<Map<String, String>> reducedIngredients =
+      List<Map<String, dynamic>> reducedIngredients =
           availableIngredients.sublist(0, i);
       List<Recipe> reducedRecipes =
           await _searchRecipesWithIngredients(reducedIngredients);
@@ -433,10 +448,10 @@ List<Recipe> _prioritizeRecipesByCategory(List<Recipe> recipes) {
 
 // 재료를 가지고 레시피 검색
 Future<List<Recipe>> _searchRecipesWithIngredients(
-    List<Map<String, String>> ingredients) async {
+    List<Map<String, dynamic>> ingredients) async {
   if (ingredients.isEmpty) return [];
 
-  List<String> ingredientNames = ingredients
+  List<dynamic> ingredientNames = ingredients
       .map((ingredient) => ingredient['name']!.toLowerCase().trim())
       .toList();
 
@@ -465,12 +480,15 @@ Future<List<Recipe>> _searchRecipesWithIngredients(
             'id': data['RCP_SEQ'] ?? '',
             'title': data['RCP_NM'] ?? '',
             'imageUrl': data['ATT_FILE_NO_MAIN'] ?? '',
+            'ingredients': data['RCP_PARTS_DTLS'] ?? '',
             'imageUrl2': data['ATT_FILE_NO_MK'] ?? '',
             'description': data['INFO_NA'] ?? '',
+            'type': data['RCP_PAT2'] ?? '',
             'manualSteps': manualSteps,
-            'ingredients': data['RCP_PARTS_DTLS'] ?? '',
             'tip': data['RCP_NA_TIP'] ?? '',
             'category': data['RCP_PAT2'] ?? '',
+            'energy' : data['INFO_ENG'] ?? '',
+            'heart' : false
           });
         } else {
           return null;
@@ -484,8 +502,8 @@ Future<List<Recipe>> _searchRecipesWithIngredients(
 }
 
 Future<List<Map<String, dynamic>>> searchRecipe(
-    List<String> ingredients) async {
-  String apiKey = '7fd3ff94eb8741edaaca';
+    List<dynamic> ingredients) async {
+  String apiKey = dotenv.get('RCP_apikey');
   String link = "https://openapi.foodsafetykorea.go.kr/api/";
   String serviceId = "COOKRCP01";
   String dataType = "json";

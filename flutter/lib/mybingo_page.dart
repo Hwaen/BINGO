@@ -10,11 +10,12 @@ class MybingoPage extends StatefulWidget {
   _MybingoPageState createState() => _MybingoPageState();
 }
 
-class _MybingoPageState extends State<MybingoPage> {
+class _MybingoPageState extends State<MybingoPage>{
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
+
   String _gender = '남성';
   String _activityLevel = '앉아서 일하기';
   final _formKey = GlobalKey<FormState>();

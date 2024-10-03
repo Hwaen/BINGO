@@ -90,7 +90,7 @@ class _FeedState extends State<Feed> {
 
 // 레시피와 냉장고 재료 비교 함수
   List<String> getMatchedIngredients(
-      String recipeIngredients, List<Map<String, String>> cookingIngredients) {
+      String recipeIngredients, List<Map<String, dynamic>> cookingIngredients) {
     DateTime now = DateTime.now(); // 현재 날짜
     final DateFormat inputDateFormat = DateFormat('yyyy.MM.dd');
 
@@ -104,7 +104,7 @@ class _FeedState extends State<Feed> {
         .toList();
 
     // 냉장고 재료 중 유통기한이 유효한 재료만 필터링하여 이름 리스트로 변환
-    List<String> fridgeIngredientNames = cookingIngredients
+    List<dynamic> fridgeIngredientNames = cookingIngredients
         .where((ingredient) {
           final expiryDate = ingredient['expiryDate'];
           if (expiryDate != null && expiryDate.isNotEmpty) {
@@ -137,11 +137,11 @@ class _FeedState extends State<Feed> {
 // 레시피와 냉장고 속 재료 비교하여 일치하는 재료를 텍스트로 반환
   String getUsedIngredientsText(Recipe recipe, RecipeProvider recipeProvider) {
     // RecipeProvider에서 냉장고 재료 가져오기
-    List<String> matchedIngredients = getMatchedIngredients(
+    List<dynamic> matchedIngredients = getMatchedIngredients(
         recipe.ingredients, recipeProvider.cookingIngredients);
 
     // 괄호를 제거하는 처리 추가
-    List<String> cleanedIngredients = matchedIngredients
+    List<dynamic> cleanedIngredients = matchedIngredients
         .map((ingredient) => ingredient
             .replaceAll(RegExp(r'\([^)]*\)'), '')
             .trim()) // 괄호 제거 및 공백 제거

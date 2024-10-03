@@ -1,12 +1,14 @@
 //랜덤 추천 레시피
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'recipe_provider.dart'; // Recipe 클래스 사용
 
 class RecipeService {
-  final String apiKey = '7fd3ff94eb8741edaaca';
+  final String apiKey = dotenv.get('RCP_apikey');
   final String serviceId = 'COOKRCP01';
   final String dataType = 'json';
   final int startIdx = 1;
@@ -69,11 +71,14 @@ class RecipeService {
                     title: data['RCP_NM'] ?? '',
                     imageUrl: data['ATT_FILE_NO_MAIN'] ?? '',
                     imageUrl2: data['ATT_FILE_NO_MK'] ?? '',
-                    description: data['INFO_ENG'] ?? '',
-                    manualSteps: manualSteps,
                     ingredients: data['RCP_PARTS_DTLS'] ?? '',
+                    description: data['INFO_ENG'] ?? '',
+                    type: data[''] ?? '',
+                    manualSteps: manualSteps,                    
                     tip: data['RCP_NA_TIP'] ?? '',
                     category: data['RCP_PAT2'] ?? '',
+                    energy: data[''] ?? '',
+                    heart: false
                   );
                 })
                 .cast<Recipe>()
