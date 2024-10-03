@@ -1,3 +1,5 @@
+// 레시피 검색 페이지
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -6,6 +8,8 @@ import 'recipe_detail_page.dart';
 import 'recipe_provider.dart'; // Import RecipeProvider
 
 class RecipeSearchPage extends StatefulWidget {
+  const RecipeSearchPage({super.key});
+
   @override
   _RecipeSearchPageState createState() => _RecipeSearchPageState();
 }
@@ -15,8 +19,8 @@ class _RecipeSearchPageState extends State<RecipeSearchPage> {
   List<Recipe> _recipes = [];
   bool _loading = false;
   String _errorMessage = '';
-  Set<String> _savedRecipeIds =
-      Set<String>(); // Add this to keep track of saved recipes
+  final Set<String> _savedRecipeIds =
+      <String>{}; // Add this to keep track of saved recipes
 
   Future<void> _searchRecipe() async {
     setState(() {

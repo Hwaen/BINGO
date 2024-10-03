@@ -1,7 +1,9 @@
+//저장된 레시피
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'recipe_provider.dart'; // RecipeProvider 임포트
-import 'recipe_detail_page.dart'; // RecipeDetailPage 임포트
+import 'recipe_provider.dart';
+import 'recipe_detail_page.dart';
 
 class RecipePage extends StatelessWidget {
   const RecipePage({super.key});
