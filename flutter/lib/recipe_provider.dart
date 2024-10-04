@@ -43,7 +43,7 @@ class Recipe {
   get expiryDate => null;
 
   // JSON 변환 메서드
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
         'id': id,
         'title': title,
         'imageUrl': imageUrl,
@@ -54,7 +54,7 @@ class Recipe {
         'manualSteps': manualSteps.map((step) => step).toList(),
         'tip': tip,
         'category': category,
-        'eng' : energy,
+        'energy' : energy,
         'heart' : false,
       };
 
@@ -71,7 +71,7 @@ class Recipe {
             .toList(),        
         tip: json['tip'] ?? '',
         category: json['category'] ?? '',
-        energy: json['eng'] ?? '',
+        energy: json['energy'] ?? '',
         heart: json['heart'] ?? ''
       );
 }
@@ -281,7 +281,7 @@ class RecipeProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     prefs.setStringList(
       'saved_recipes',
-      _savedRecipes.map((recipe) => jsonEncode(recipe.toJson())).toList(),
+      _savedRecipes.map((recipe) => jsonEncode(recipe.toMap())).toList(),
     );
   }
 
@@ -291,7 +291,7 @@ class RecipeProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     prefs.setStringList(
       'saved_recipes',
-      _savedRecipes.map((recipe) => jsonEncode(recipe.toJson())).toList(),
+      _savedRecipes.map((recipe) => jsonEncode(recipe.toMap())).toList(),
     );
   }
 

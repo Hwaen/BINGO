@@ -6,10 +6,12 @@ import 'recipe_provider.dart'; // RecipeProvider import
 import 'recipe_search_page.dart'; // RecipeSearchPage import
 import 'home_page.dart';
 import 'mybingo_page.dart';
+import 'database_seviece.dart';
 
 void main() async{
-  WidgetsFlutterBinding.ensureInitialized();  // 1번코드
+  WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env"); 
+  
   runApp(
     ChangeNotifierProvider(
       create: (context) => RecipeProvider(),
