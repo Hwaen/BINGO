@@ -49,10 +49,11 @@ class Database_BINGO{
 
     // Food DB
     db.execute('''CREATE TABLE "ingredient" (
-              "ingredient_name" text NOT NULL UNIQUE,
+              "ingredient_index" int NOT NULL UNIQUE,
+              "ingredient_name" text NOT NULL,
               "ingredient_exp" text NOT NULL,
               "ingredient_iscook" int NOT NULL,
-              PRIMARY KEY("ingredient_name") 
+              PRIMARY KEY("ingredient_index") 
               )'''
     );
 
@@ -77,25 +78,27 @@ class Database_BINGO{
     try{
       if(isCooking){
         await database.insert(
-          'ingredient',
-          {'ingredient_name': ingredient['name'],
+          'ingredient', {
+          'ingredient_index': ingredient['id'],
+          'ingredient_name': ingredient['name'],
           'ingredient_exp': ingredient['expiryDate'],
           'ingredient_iscook': 1 }, //요리 가능 보관
           conflictAlgorithm: ConflictAlgorithm.replace
           );
-
-          return true;
+         
       }else{
         await database.insert(
-          'ingredient',
-          { 'ingredient_name': ingredient['name'],
+          'ingredient', { 
+            'ingredient_index': ingredient['id'],
+            'ingredient_name': ingredient['name'],
             'ingredient_exp': ingredient['expiryDate'],
             'ingredient_iscook': 0 }, //재료 보관
         conflictAlgorithm: ConflictAlgorithm.replace
         );
-
-        return true;
       }
+      print("재료 저장 완료");
+      return true;
+      
     }
     catch(err){
       return false;
@@ -105,21 +108,30 @@ class Database_BINGO{
   // SELECT ingredient
   Future<List<Map<String, dynamic>>> select_ingredient(Map<String, dynamic> ingredient) async{
     final Database database = await db;
-    final List<Map<String, dynamic>> data = await database.query('ingredient', where: "ingredient = ?", whereArgs: [ingredient['name']]);
+    final List<Map<String, dynamic>> data = await database.query('ingredient', where: "ingredient = ?", whereArgs: [ingredient['id']]);
 
     return data;
   }
   
+  //SELECT ALL ingredient
+  Future<List<Map<String, dynamic>>> selectALL_ingredient() async{
+    final Database database = await db;
+    final List<Map<String, dynamic>> data = await database.query('ingredient');
+
+    return data;
+  }
+
   // UPDATE Ingredient
   Future<bool> update_ingredient(Map<String, dynamic> ingredient, int is_Cooking) async {
     final Database database = await db;
     try{
       database.update(
         'ingredient', 
-        { 'ingredient_exp': ingredient['expiryDate'],
+        { 'ingredient_index': ingredient['id'],
+          'ingredient_exp': ingredient['expiryDate'],
           'ingredient_iscook': is_Cooking },
         where: "ingredient = ?",
-        whereArgs: [ingredient['name']]
+        whereArgs: [ingredient['id']]
         );
         return true;
     }
@@ -188,6 +200,29 @@ class Database_BINGO{
     });
   }
   
+  // SELECT ALL Recipe
+  Future<List<Recipe>> selectALL_Recipe() async{
+    final Database database = await db;
+    final List<Map<String, dynamic>> data = await database.query('recipes');
+
+    return List.generate(data.length, (i) {
+      return Recipe(
+        id: data[i] ['id'], 
+        title: data[i] ['title'], 
+        imageUrl: data[i] ['imageUrl'], 
+        imageUrl2: data[i] ['imageUrl2'], 
+        ingredients: data[i] ['ingredients'], 
+        description: data[i] ['description'], 
+        type: data[i] ['type'],
+        manualSteps: data[i] ['manualSteps'],         
+        tip: data[i] ['tip'],
+        category: data[i] ['category'],
+        energy: data[i]['energy'],
+        heart: false
+        );
+    });
+  }
+
   // UPDATE Recipe
   Future<bool> update_Recipe(Recipe RCP) async {
     final Database database = await db;
@@ -207,7 +242,7 @@ class Database_BINGO{
   }
 
   // DELETE Recipe
-  Future<bool> deleteRecipe(int id) async{
+  Future<bool> delete_Recipe(int id) async{
      final Database database = await db;
     try{
       database.delete(

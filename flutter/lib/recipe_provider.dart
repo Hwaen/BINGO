@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hello_flutter/database_seviece.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -76,7 +77,7 @@ class Recipe {
       );
 }
 
-class RecipeProvider with ChangeNotifier {
+class RecipeProvider extends Database_BINGO with ChangeNotifier {
   Timer? _midnightTimer;
   final List<Map<String, dynamic>> _ingredients = [];
 
@@ -93,6 +94,7 @@ class RecipeProvider with ChangeNotifier {
     _scheduleMidnightRefresh(); // 자정 갱신 스케줄링
   }
 
+  //자정 계산기
   void _scheduleMidnightRefresh() {
     // 현재 시간
     DateTime now = DateTime.now();
@@ -116,6 +118,8 @@ class RecipeProvider with ChangeNotifier {
 
   // 레시피와 냉장고 재료 비교 함수
   List<String> getMatchedIngredients(String recipeIngredients) {
+    
+
     List<String> recipeIngredientList = recipeIngredients
         .split(',') // 쉼표로 구분하여 재료 분해
         .map((ingredient) => ingredient.trim().toLowerCase()) // 소문자로 변환 및 공백 제거
@@ -136,8 +140,7 @@ class RecipeProvider with ChangeNotifier {
 
   // 재료 추가 메서드
   void addIngredient(Map<String, dynamic> ingredient, bool isCooking) async {
-    ingredient['isCooking'] = isCooking ? 'true' : 'false'; // isCooking 값 추가
-
+    insert_ingredient(ingredient, isCooking);
     _ingredients.add(ingredient);
 
     if (isCooking) {
@@ -145,31 +148,17 @@ class RecipeProvider with ChangeNotifier {
     } else {
       _nonCookingIngredients.add(ingredient);
     }
-
-    // SharedPreferences에 재료 저장
-    final prefs = await SharedPreferences.getInstance();
-    List<String> savedIngredients =
-        prefs.getStringList('saved_ingredients') ?? [];
-    savedIngredients.add(jsonEncode(ingredient)); // 재료를 JSON으로 인코딩하여 추가
-
-    // 저장되는 데이터를 로그로 출력하여 확인
-    if (kDebugMode) {
-      print('저장된 재료 목록: $savedIngredients');
-    }
-
-    await prefs.setStringList(
-        'saved_ingredients', savedIngredients); // 업데이트된 재료 목록 저장
-
     notifyListeners(); // 변경 사항을 알림
   }
 
   // 재료 업데이트 메서드
-  void updateIngredient(
-      int index, Map<String, String> updatedIngredient, bool isCooking) {
+  void updateIngredient(int index, Map<String, String> updatedIngredient, bool isCooking) {
     _ingredients[index] = updatedIngredient;
-    _saveIngredients(); // 재료 목록 저장
+    if(isCooking){update_ingredient(updatedIngredient, 1);}
+    else{update_ingredient(updatedIngredient, 0);}
+    
     notifyListeners();
-    loadSavedIngredients();
+    loadSavedIngredients();    
   }
 
   // 재료 목록 반환
@@ -181,11 +170,10 @@ class RecipeProvider with ChangeNotifier {
   List<Map<String, dynamic>> getExpiringOrExpiredIngredients() {
     final DateFormat inputDateFormat = DateFormat('yyyy.MM.dd');
     DateTime now = DateTime.now();
+    
     return _ingredients.where((ingredient) {
       final expiryDate = ingredient['expiryDate'];
-      if (expiryDate == null || expiryDate.isEmpty) {
-        return false;
-      }
+      if (expiryDate == null || expiryDate.isEmpty) { return false; }
 
       DateTime expiry;
       try {
@@ -203,42 +191,33 @@ class RecipeProvider with ChangeNotifier {
   }
 
   // 재료 삭제 메서드
-  void removeIngredient(int index) {
-    _ingredients.removeAt(index);
-    _saveIngredients(); // 재료 목록 저장
-    notifyListeners();
+  void removeIngredient(int index, String ingredient_name) {
+    delete_ingredient(ingredient_name);
     loadSavedIngredients();
+    notifyListeners();    
   }
 
-  // 재료 목록을 SharedPreferences에 저장
-  void _saveIngredients() async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<String> ingredientList =
-        _ingredients.map((ingredient) => jsonEncode(ingredient)).toList();
-    await prefs.setStringList('saved_ingredients', ingredientList);
-  }
-
-  // SharedPreferences에서 저장된 재료 목록 불러오기
+  // DB에서 저장된 재료 목록 불러오기
   Future<void> loadSavedIngredients() async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<String>? savedIngredients =
-        prefs.getStringList('saved_ingredients');
+    selectALL_ingredient();
+    final Future<List<Map<String, dynamic>>> loadSavedIngredients = selectALL_ingredient();
 
-    if (savedIngredients != null) {
+    List list = await loadSavedIngredients;
+
+    if (loadSavedIngredients != null) {
       _ingredients.clear();
       _cookingIngredients.clear();
       _nonCookingIngredients.clear();
-
-      for (var ingredientJson in savedIngredients) {
-        Map<String, String> ingredient =
-            Map<String, String>.from(jsonDecode(ingredientJson));
+      
+      for (var item in list) {
+        Map<String, dynamic> ingredient = item;
         _ingredients.add(ingredient);
-
+        
         // 불러온 재료 출력
         if (kDebugMode) {
           print('불러온 재료: $ingredient');
         }
-
+        
         // storage 필드를 통해 요리 가능한 재료와 보관 가능한 재료를 분리
         if (ingredient['storage'] == '요리 가능 재료') {
           _cookingIngredients.add(ingredient);
@@ -246,28 +225,28 @@ class RecipeProvider with ChangeNotifier {
           _nonCookingIngredients.add(ingredient);
         }
       }
-
       // 요리 가능한 재료 출력
       if (kDebugMode) {
         print('요리 가능한 재료: $_cookingIngredients');
       }
-
       notifyListeners(); // 변경 사항 알림
     }
   }
 
   Future<void> loadSavedRecipes() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String>? savedRecipesJson = prefs.getStringList('saved_recipes');
+    selectALL_Recipe();
 
-    if (savedRecipesJson != null) {
-      _savedRecipes.clear(); // 기존 저장된 레시피 목록을 초기화
-      _savedRecipes.addAll(savedRecipesJson.map((recipeJson) {
-        return Recipe.fromJson(jsonDecode(recipeJson));
-      }).toList());
+    // final prefs = await SharedPreferences.getInstance();
+    // List<String>? savedRecipesJson = prefs.getStringList('saved_recipes');
 
-      notifyListeners(); // UI 업데이트를 위한 알림
-    }
+    // if (savedRecipesJson != null) {
+    //   _savedRecipes.clear(); // 기존 저장된 레시피 목록을 초기화
+    //   _savedRecipes.addAll(savedRecipesJson.map((recipeJson) {
+    //     return Recipe.fromJson(jsonDecode(recipeJson));
+    //   }).toList());
+
+    notifyListeners(); // UI 업데이트를 위한 알림
+    // }
   }
 
   final List<Recipe> _savedRecipes = [];
@@ -276,23 +255,27 @@ class RecipeProvider with ChangeNotifier {
 
   // 레시피 저장 및 불러오는 메서드는 기존과 동일하게 유지
   void saveRecipe(Recipe recipe) async {
-    _savedRecipes.add(recipe);
+    insert_Recipe(recipe);
+    
+    // _savedRecipes.add(recipe);
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setStringList(
-      'saved_recipes',
-      _savedRecipes.map((recipe) => jsonEncode(recipe.toMap())).toList(),
-    );
+    // final prefs = await SharedPreferences.getInstance();
+    // prefs.setStringList(
+    //   'saved_recipes',
+    //   _savedRecipes.map((recipe) => jsonEncode(recipe.toMap())).toList(),
+    // );
   }
 
   void removeRecipe(String id) async {
-    _savedRecipes.removeWhere((r) => r.id == id);
+    delete_Recipe(int.parse(id));
+
+    // _savedRecipes.removeWhere((r) => r.id == id);
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setStringList(
-      'saved_recipes',
-      _savedRecipes.map((recipe) => jsonEncode(recipe.toMap())).toList(),
-    );
+    // final prefs = await SharedPreferences.getInstance();
+    // prefs.setStringList(
+    //   'saved_recipes',
+    //   _savedRecipes.map((recipe) => jsonEncode(recipe.toMap())).toList(),
+    // );
   }
 
   // recipe_service에서 랜덤 레시피를 가져오는 함수
@@ -316,19 +299,19 @@ class RecipeProvider with ChangeNotifier {
     // 유통기한이 오늘 이전인 재료를 제외한 요리 가능한 재료 목록을 가져오기
     List<Map<String, dynamic>> availableIngredients =
         _cookingIngredients.where((ingredient) {
-      final expiryDate = ingredient['expiryDate'];
-      if (expiryDate != null && expiryDate.isNotEmpty) {
-        DateTime expiry;
-        try {
-          expiry = DateFormat('yyyy.MM.dd').parse(expiryDate);
-        } catch (e) {
-          print('Error parsing expiry date: $e');
-          return false;
-        }
-        // 유통기한이 오늘 이후인 재료만 사용
-        return expiry.isAfter(now);
-      }
-      return true; // 유통기한이 없는 재료는 사용
+          final expiryDate = ingredient['expiryDate'];
+          if (expiryDate != null && expiryDate.isNotEmpty) {
+            DateTime expiry;
+            try {
+              expiry = DateFormat('yyyy.MM.dd').parse(expiryDate);
+            } catch (e) {
+              print('Error parsing expiry date: $e');
+              return false;
+            }
+            // 유통기한이 오늘 이후인 재료만 사용
+            return expiry.isAfter(now);
+          }
+          return true; // 유통기한이 없는 재료는 사용
     }).toList();
 
     // 1. 요리 가능 재료 목록 안에 있는 재료들로 레시피 추출

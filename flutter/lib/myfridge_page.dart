@@ -503,7 +503,7 @@ class _MyFridgePageState extends State<MyFridgePage> {
                           icon: Icon(Icons.delete),
                           onPressed: () {
                             Provider.of<RecipeProvider>(context, listen: false)
-                                .removeIngredient(index); // 재료 삭제
+                                .removeIngredient(index, name); // 재료 삭제
                           },
                         ),
                       ],
