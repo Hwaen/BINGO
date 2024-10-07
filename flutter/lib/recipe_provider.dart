@@ -191,8 +191,8 @@ class RecipeProvider extends Database_BINGO with ChangeNotifier {
   }
 
   // 재료 삭제 메서드
-  void removeIngredient(int index, String ingredient_name) {
-    delete_ingredient(ingredient_name);
+  void removeIngredient(int index, String ingredientName) {
+    delete_ingredient(ingredientName);
     loadSavedIngredients();
     notifyListeners();    
   }
@@ -204,34 +204,32 @@ class RecipeProvider extends Database_BINGO with ChangeNotifier {
 
     List list = await loadSavedIngredients;
 
-    if (loadSavedIngredients != null) {
-      _ingredients.clear();
-      _cookingIngredients.clear();
-      _nonCookingIngredients.clear();
+    _ingredients.clear();
+    _cookingIngredients.clear();
+    _nonCookingIngredients.clear();
+    
+    for (var item in list) {
+      Map<String, dynamic> ingredient = item;
+      _ingredients.add(ingredient);
       
-      for (var item in list) {
-        Map<String, dynamic> ingredient = item;
-        _ingredients.add(ingredient);
-        
-        // 불러온 재료 출력
-        if (kDebugMode) {
-          print('불러온 재료: $ingredient');
-        }
-        
-        // storage 필드를 통해 요리 가능한 재료와 보관 가능한 재료를 분리
-        if (ingredient['storage'] == '요리 가능 재료') {
-          _cookingIngredients.add(ingredient);
-        } else {
-          _nonCookingIngredients.add(ingredient);
-        }
-      }
-      // 요리 가능한 재료 출력
+      // 불러온 재료 출력
       if (kDebugMode) {
-        print('요리 가능한 재료: $_cookingIngredients');
+        print('불러온 재료: $ingredient');
       }
-      notifyListeners(); // 변경 사항 알림
+      
+      // storage 필드를 통해 요리 가능한 재료와 보관 가능한 재료를 분리
+      if (ingredient['storage'] == '요리 가능 재료') {
+        _cookingIngredients.add(ingredient);
+      } else {
+        _nonCookingIngredients.add(ingredient);
+      }
     }
-  }
+    // 요리 가능한 재료 출력
+    if (kDebugMode) {
+      print('요리 가능한 재료: $_cookingIngredients');
+    }
+    notifyListeners(); // 변경 사항 알림
+    }
 
   Future<void> loadSavedRecipes() async {
     selectALL_Recipe();

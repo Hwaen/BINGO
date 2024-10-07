@@ -351,9 +351,9 @@ class _MyFridgePageState extends State<MyFridgePage> {
             label: '갤러리',
             onTap: () async {
               // 갤러리에서 이미지 선택
-              final ImagePicker _picker = ImagePicker();
+              final ImagePicker picker = ImagePicker();
               final XFile? image =
-                  await _picker.pickImage(source: ImageSource.gallery);
+                  await picker.pickImage(source: ImageSource.gallery);
 
               if (image != null) {
                 // 갤러리에서 선택한 이미지 처리 메서드 호출

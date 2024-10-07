@@ -41,7 +41,7 @@ class _MybingoPageState extends State<MybingoPage>{
       _activityLevel = prefs.getString('activityLevel') ?? '앉아서 일하기';
       _profileImageUrl = prefs.getString('profileImageUrl') ??
           'https://via.placeholder.com/150';
-      _recommendedCalories = prefs.getDouble('recommendedCalories') ?? null;
+      _recommendedCalories = prefs.getDouble('recommendedCalories');
     });
   }
 

@@ -6,7 +6,7 @@ import 'recipe_provider.dart'; // Recipe 클래스의 위치에 맞게 경로를
 class RecipeDetailPage extends StatelessWidget {
   final Recipe recipe;
 
-  RecipeDetailPage({required this.recipe});
+  const RecipeDetailPage({super.key, required this.recipe});
 
   @override
   Widget build(BuildContext context) {

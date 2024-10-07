@@ -122,14 +122,14 @@ class Database_BINGO{
   }
 
   // UPDATE Ingredient
-  Future<bool> update_ingredient(Map<String, dynamic> ingredient, int is_Cooking) async {
+  Future<bool> update_ingredient(Map<String, dynamic> ingredient, int isCooking) async {
     final Database database = await db;
     try{
       database.update(
         'ingredient', 
         { 'ingredient_index': ingredient['id'],
           'ingredient_exp': ingredient['expiryDate'],
-          'ingredient_iscook': is_Cooking },
+          'ingredient_iscook': isCooking },
         where: "ingredient = ?",
         whereArgs: [ingredient['id']]
         );
