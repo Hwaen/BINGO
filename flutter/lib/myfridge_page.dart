@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:intl/intl.dart';
 import 'package:translator/translator.dart';
@@ -524,8 +526,7 @@ class _MyFridgePageState extends State<MyFridgePage> {
 }
 
 class PexelsService {
-  final String _accessKey =
-      'eF9GnybSb69VqyqMWelHNylGYV8njeRJeBTJzCSIhCPhn9LYfuStiQNq';
+  final String _accessKey = dotenv.get('IMG_apikey');
 
   Future<String> searchImage(String query) async {
     // 여러 키워드를 공백으로 분리하여 검색

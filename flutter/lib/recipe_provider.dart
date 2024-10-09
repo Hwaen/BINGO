@@ -2,10 +2,14 @@
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hello_flutter/database_seviece.dart';
+
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
+
 import 'recipe_service.dart';
 
 class Recipe {
@@ -13,38 +17,47 @@ class Recipe {
   final String title;
   final String imageUrl;
   final String imageUrl2;
-  final String description;
-  final List<Map<String, dynamic>> manualSteps;
   final String ingredients;
+  final String description;
+  final String type;
+  final List<Map<String, dynamic>> manualSteps;
   final String tip;
   final String category;
+  final double energy;
+  final bool heart;
 
   Recipe({
     required this.id,
     required this.title,
     required this.imageUrl,
     required this.imageUrl2,
-    required this.description,
-    required this.manualSteps,
     required this.ingredients,
+    required this.description,
+    required this.type,
+    required this.manualSteps,
     required this.tip,
     required this.category,
+    required this.energy,
+    required this.heart
   });
 
   get expiryDate => null;
 
   // JSON 변환 메서드
   Map<String, dynamic> toJson() => {
-        'id': id,
+         'id': id,
         'title': title,
         'imageUrl': imageUrl,
         'imageUrl2': imageUrl2,
-        'description': description,
-        'manualSteps': manualSteps.map((step) => step).toList(),
         'ingredients': ingredients,
+        'description': description,
+        'type': type,
+        'manualSteps': manualSteps.map((step) => step).toList(),
         'tip': tip,
         'category': category,
-      };
+        'energy' : energy,
+        'heart' : false,
+    };
 
   // Recipe 객체를 사람이 읽을 수 있는 문자열로 변환하는 toString 메서드 추가
   @override
@@ -57,26 +70,29 @@ class Recipe {
         title: json['title'] ?? '',
         imageUrl: json['imageUrl'] ?? '',
         imageUrl2: json['imageUrl2'] ?? '',
+        ingredients: json['ingredients'] ?? '',
         description: json['description'] ?? '',
+        type: json['type'] ?? '',
         manualSteps: (json['manualSteps'] as List<dynamic>? ?? [])
             .map((e) => e as Map<String, dynamic>)
-            .toList(),
-        ingredients: json['ingredients'] ?? '',
+            .toList(),        
         tip: json['tip'] ?? '',
         category: json['category'] ?? '',
+        energy: json['energy'] ?? '',
+        heart: json['heart'] ?? ''
       );
 }
 
-class RecipeProvider with ChangeNotifier {
+class RecipeProvider extends Database_BINGO with ChangeNotifier {
   Timer? _midnightTimer;
-  final List<Map<String, String>> _ingredients = [];
+  final List<Map<String, dynamic>> _ingredients = [];
 
-  final List<Map<String, String>> _cookingIngredients = []; // 요리 가능한 재료
-  final List<Map<String, String>> _nonCookingIngredients = []; // 보관 가능한 재료
+  final List<Map<String, dynamic>> _cookingIngredients = []; // 요리 가능한 재료
+  final List<Map<String, dynamic>> _nonCookingIngredients = []; // 보관 가능한 재료
   final RecipeService recipeService = RecipeService(); // RecipeService 인스턴스
 
-  List<Map<String, String>> get cookingIngredients => _cookingIngredients;
-  List<Map<String, String>> get nonCookingIngredients => _nonCookingIngredients;
+  List<Map<String, dynamic>> get cookingIngredients => _cookingIngredients;
+  List<Map<String, dynamic>> get nonCookingIngredients => _nonCookingIngredients;
 
   RecipeProvider() {
     loadSavedIngredients(); // 앱 시작 시 저장된 재료 목록 불러오기
@@ -84,6 +100,7 @@ class RecipeProvider with ChangeNotifier {
     _scheduleMidnightRefresh(); // 자정 갱신 스케줄링
   }
 
+  //자정 계산기
   void _scheduleMidnightRefresh() {
     // 현재 시간
     DateTime now = DateTime.now();
@@ -112,7 +129,7 @@ class RecipeProvider with ChangeNotifier {
         .map((ingredient) => ingredient.trim().toLowerCase()) // 소문자로 변환 및 공백 제거
         .toList();
 
-    List<String> fridgeIngredientNames = _cookingIngredients
+    List<dynamic> fridgeIngredientNames = _cookingIngredients
         .map((ingredient) =>
             ingredient['name']!.toLowerCase().trim()) // 냉장고 재료 이름 변환
         .toList();
@@ -126,7 +143,7 @@ class RecipeProvider with ChangeNotifier {
   }
 
   // 재료 추가 메서드
-  void addIngredient(Map<String, String> ingredient, bool isCooking) async {
+  void addIngredient(Map<String, dynamic> ingredient, bool isCooking) async {
     ingredient['isCooking'] = isCooking ? 'true' : 'false'; // isCooking 값 추가
 
     _ingredients.add(ingredient);
@@ -164,12 +181,12 @@ class RecipeProvider with ChangeNotifier {
   }
 
   // 재료 목록 반환
-  List<Map<String, String>> getIngredients() {
+  List<Map<String, dynamic>> getIngredients() {
     return _ingredients;
   }
 
   // 유통기한이 임박하거나 지난 재료 반환
-  List<Map<String, String>> getExpiringOrExpiredIngredients() {
+  List<Map<String, dynamic>> getExpiringOrExpiredIngredients() {
     final DateFormat inputDateFormat = DateFormat('yyyy.MM.dd');
     DateTime now = DateTime.now();
     return _ingredients.where((ingredient) {

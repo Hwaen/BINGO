@@ -166,7 +166,7 @@ class Database_BINGO{
     try{
       database.insert(
         'recipes',
-        RCP.toMap(),
+        RCP.toJson(),
         conflictAlgorithm: ConflictAlgorithm.replace
         );
 
@@ -229,7 +229,7 @@ class Database_BINGO{
     try{
       database.update(
         'recipes', 
-        RCP.toMap(),
+        RCP.toJson(),
         where: "id = ?",
         whereArgs: [RCP.id]
         );
