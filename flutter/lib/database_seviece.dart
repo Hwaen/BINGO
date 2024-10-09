@@ -138,7 +138,6 @@ class Database_BINGO{
     catch(err){
       return false;
     }
-
   }
 
   // DELETE ingredient

@@ -322,7 +322,7 @@ class RecipeProvider extends Database_BINGO with ChangeNotifier {
     DateTime today = DateTime(now.year, now.month, now.day);
 
     // 유통기한이 오늘인 재료도 포함하여 요리 가능한 재료 목록을 가져오기
-    List<Map<String, String>> availableIngredients =
+    List<Map<String, dynamic>> availableIngredients = 
         _cookingIngredients.where((ingredient) {
       final expiryDate = ingredient['expiryDate'];
       if (expiryDate != null && expiryDate.isNotEmpty) {
@@ -519,7 +519,7 @@ Future<List<Recipe>> _searchRecipesWithIngredients(
 
 Future<List<Map<String, dynamic>>> searchRecipe(
     List<String> ingredients) async {
-  String apiKey = '7fd3ff94eb8741edaaca';
+  String apiKey = dotenv.get('RCP_apikey');
   String link = "https://openapi.foodsafetykorea.go.kr/api/";
   String serviceId = "COOKRCP01";
   String dataType = "json";
