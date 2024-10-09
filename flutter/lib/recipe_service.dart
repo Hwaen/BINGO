@@ -4,7 +4,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'recipe_provider.dart'; // Recipe 클래스 사용
 
 class RecipeService {
@@ -74,7 +73,7 @@ class RecipeService {
                     ingredients: data['RCP_PARTS_DTLS'] ?? '',
                     description: data['INFO_ENG'] ?? '',
                     type: data[''] ?? '',
-                    manualSteps: manualSteps,                    
+                    manualSteps: manualSteps,
                     tip: data['RCP_NA_TIP'] ?? '',
                     category: data['RCP_PAT2'] ?? '',
                     energy: data[''] ?? '',

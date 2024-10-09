@@ -10,12 +10,11 @@ class MybingoPage extends StatefulWidget {
   _MybingoPageState createState() => _MybingoPageState();
 }
 
-class _MybingoPageState extends State<MybingoPage>{
+class _MybingoPageState extends State<MybingoPage> {
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
-
   String _gender = '남성';
   String _activityLevel = '앉아서 일하기';
   final _formKey = GlobalKey<FormState>();
@@ -41,7 +40,7 @@ class _MybingoPageState extends State<MybingoPage>{
       _activityLevel = prefs.getString('activityLevel') ?? '앉아서 일하기';
       _profileImageUrl = prefs.getString('profileImageUrl') ??
           'https://via.placeholder.com/150';
-      _recommendedCalories = prefs.getDouble('recommendedCalories');
+      _recommendedCalories = prefs.getDouble('recommendedCalories') ?? null;
     });
   }
 

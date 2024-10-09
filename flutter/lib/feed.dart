@@ -68,6 +68,9 @@ class _FeedState extends State<Feed> {
           _recommendedRecipes = recipes; // 추천된 레시피를 상태에 저장
           _isLoading = false; // 로딩 완료
         });
+        if (kDebugMode) {
+          print("최종 화면에 표시할 레시피: $_recommendedRecipes"); // 최종 화면에 표시할 레시피
+        }
       }
     } catch (e) {
       // 에러 처리
@@ -103,14 +106,15 @@ class _FeedState extends State<Feed> {
         .where((ingredient) => ingredient.isNotEmpty) // 빈 문자열 제거
         .toList();
 
-    // 냉장고 재료 중 유통기한이 유효한 재료만 필터링하여 이름 리스트로 변환
+// 냉장고 재료 중 유통기한이 유효한 재료만 필터링하여 이름 리스트로 변환
     List<dynamic> fridgeIngredientNames = cookingIngredients
         .where((ingredient) {
           final expiryDate = ingredient['expiryDate'];
           if (expiryDate != null && expiryDate.isNotEmpty) {
             try {
               DateTime expiry = inputDateFormat.parse(expiryDate);
-              return expiry.isAfter(now); // 유통기한이 오늘 이후인 재료만 포함
+              // 유통기한이 오늘이거나 그 이후인 재료만 포함
+              return expiry.isAtSameMomentAs(now) || expiry.isAfter(now);
             } catch (e) {
               if (kDebugMode) {
                 print('Error parsing expiry date: $e');
@@ -123,12 +127,12 @@ class _FeedState extends State<Feed> {
         .map((ingredient) => ingredient['name']!.toLowerCase().trim())
         .toList();
 
-    // 레시피 재료 중 냉장고 속 유효한 재료와 일치하는 재료를 찾기
+// 냉장고 속 재료와 유사한 재료 찾기
     List<String> matchedIngredients =
         recipeIngredientList.where((recipeIngredient) {
       return fridgeIngredientNames.any((fridgeIngredient) =>
-          fridgeIngredient.contains(recipeIngredient) ||
-          recipeIngredient.contains(fridgeIngredient));
+          recipeIngredient.contains(fridgeIngredient) ||
+          fridgeIngredient.contains(recipeIngredient)); // 부분 일치 허용
     }).toList();
 
     return matchedIngredients; // 일치하는 유효한 재료 리스트 반환
@@ -246,7 +250,7 @@ class _FeedState extends State<Feed> {
                   ? Center(child: Text('추천 레시피 로드 실패.'))
                   : _recommendedRecipes.isNotEmpty
                       ? SizedBox(
-                          height: 230, // 높이 조정
+                          height: 290, // 높이 조정
                           child: PageView.builder(
                             itemCount: _recommendedRecipes.length,
                             itemBuilder: (context, index) {
@@ -487,7 +491,7 @@ class _FeedState extends State<Feed> {
                 ),
               ],
             );
-          }),
+          }).toList(),
         ],
       ),
     );
