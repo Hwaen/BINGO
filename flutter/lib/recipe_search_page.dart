@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'dart:convert';
-
 import 'recipe_detail_page.dart';
 import 'recipe_provider.dart'; // Import RecipeProvider
 
@@ -84,14 +83,11 @@ class _RecipeSearchPageState extends State<RecipeSearchPage> {
           title: recipe.title,
           imageUrl: recipe.imageUrl,
           imageUrl2: recipe.imageUrl2,
-          ingredients: recipe.ingredients,
           description: recipe.description,
-          type: recipe.type,
-          manualSteps: recipe.manualSteps,          
+          manualSteps: recipe.manualSteps,
+          ingredients: recipe.ingredients,
           tip: recipe.tip,
           category: recipe.category,
-          energy: recipe.energy,
-          heart: recipe.heart
         );
 
         // 저장된 레시피 추가

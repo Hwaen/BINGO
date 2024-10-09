@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:intl/intl.dart';
 import 'package:translator/translator.dart';
@@ -351,9 +350,9 @@ class _MyFridgePageState extends State<MyFridgePage> {
             label: '갤러리',
             onTap: () async {
               // 갤러리에서 이미지 선택
-              final ImagePicker picker = ImagePicker();
+              final ImagePicker _picker = ImagePicker();
               final XFile? image =
-                  await picker.pickImage(source: ImageSource.gallery);
+                  await _picker.pickImage(source: ImageSource.gallery);
 
               if (image != null) {
                 // 갤러리에서 선택한 이미지 처리 메서드 호출
@@ -503,7 +502,7 @@ class _MyFridgePageState extends State<MyFridgePage> {
                           icon: Icon(Icons.delete),
                           onPressed: () {
                             Provider.of<RecipeProvider>(context, listen: false)
-                                .removeIngredient(index, name); // 재료 삭제
+                                .removeIngredient(index); // 재료 삭제
                           },
                         ),
                       ],
@@ -525,7 +524,8 @@ class _MyFridgePageState extends State<MyFridgePage> {
 }
 
 class PexelsService {
-  final String _accessKey = dotenv.get('IMG_apikey');
+  final String _accessKey =
+      'eF9GnybSb69VqyqMWelHNylGYV8njeRJeBTJzCSIhCPhn9LYfuStiQNq';
 
   Future<String> searchImage(String query) async {
     // 여러 키워드를 공백으로 분리하여 검색
